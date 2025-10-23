@@ -7,8 +7,8 @@ import re
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from file import sanitize_value
-from metadata import (
+from utils.file import sanitize_value
+from utils.metadata import (
     safe_find_property,
     safe_find_multiple_properties,
     extract_book_page_metadata
