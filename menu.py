@@ -1,23 +1,108 @@
 import csv
+import glob
+import os
+import sys
 import textwrap
 import colored
-from indexer import BookSearchEngine
 
-DATA_FILE = "books_arch.tsv"  # Path to your CSV file
-engine = BookSearchEngine(idf_mode="probabilistic")
+
+from utils.file import read_book_from_file, sanitize_book_link
+from utils.indexer import BookSearchEngine
+from utils.metadata import extract_metadata
+from utils.url import get_book_id_from_link, get_links_from_page, get_not_visited_from_new_links_optimized
+
+
+idf_mode = "standard"
+
+if len(sys.argv) > 1:
+    arg = sys.argv[1].lower()
+    if arg in ["standard", "probabilistic"]:
+        idf_mode = arg
+    else:
+        print(f"⚠️ Unknown mode '{arg}', defaulting to 'standard'.")
+
+print(f"Using IDF mode: {idf_mode}")
+engine = BookSearchEngine(idf_mode=idf_mode)
+
+url_queue = ["https://openlibrary.org"]
+visited_urls = []
+visited_book_ids = []
+books = []
+
+total_documents = (([entry for entry in os.listdir("page_sources") if os.path.isfile(os.path.join("page_sources", entry))]))
+total_documents_count = len(total_documents)
+
+
+# print(total_documents)
+def index_pages():
+  global url_queue
+  global visited_urls
+  global total_documents_count
+  global idf_mode
+
+  while url_queue:
+    current_link = url_queue.pop(0)
+    visited_url_count = len(visited_urls)
+    if visited_url_count >= total_documents_count:
+      print(f"Indexing has completed\n Indexed total number of pages:{len(visited_urls)} and found {len(books)} books")
+      break
+    elif visited_url_count % 100 == 0:
+      os.system('clear')
+      print(f"IDF mode: {idf_mode}")
+      print(f"{visited_url_count}/{total_documents_count} - {int(visited_url_count/total_documents_count*100)}%")
+    if index_page(current_link) == False:
+      print(f"Indexing has completed\n Indexed total number of pages:{len(visited_urls)} and found {len(books)} books")
+      break
+
+
+def index_page(page):
+  global url_queue
+  global visited_urls
+  global books
+  global total_documents
+  global visited_book_ids
+
+  source = read_book_from_file(page)
+
+  if source == None:
+    print(f"Indexing has completed\n Indexed total number of pages:{len(visited_urls)} and found {len(books)} books")
+    return False
+
+  book_id = get_book_id_from_link(page)
+
+  if source != None:
+    if book_id != None and book_id not in visited_book_ids:
+      visited_book_ids.append(book_id)
+      book_metadata = extract_metadata(page, source, False)
+
+      if book_metadata != None and book_metadata["title"] != "N/A":
+        books.append(book_metadata)
+        engine.add_book(book_metadata)
+
+    visited_urls.append(page)
+    links = get_links_from_page(source, page);
+    new_links = get_not_visited_from_new_links_optimized(visited_urls, url_queue, links)
+    # new_urls = {link.url for link in new_links}
+    for link in new_links:
+      file_name = f"{sanitize_book_link(link.url)}.html"
+      if file_name in total_documents:
+        url_queue.append(link.url)
+
+  return True
 
 def safe_get(book, field):
     return book.get(field, "").strip() or "N/A"
 
-def load_books():
-    books = []
-    with open(DATA_FILE, newline='', encoding="utf-8") as f:
-        reader = csv.DictReader(f, delimiter='\t')
-        for row in reader:
-            normalized = {k: (v.strip() if v and v.strip() else "N/A") for k, v in row.items()}
-            books.append(normalized)
-            engine.add_book(row)
-    return books
+
+# def load_books():
+#     books = []
+#     with open(DATA_FILE, newline='', encoding="utf-8") as f:
+#         reader = csv.DictReader(f, delimiter='\t')
+#         for row in reader:
+#             normalized = {k: (v.strip() if v and v.strip() else "N/A") for k, v in row.items()}
+#             books.append(normalized)
+#             engine.add_book(row)
+#     return books
 
 
 def find_books_by_field(field, value):
@@ -28,29 +113,29 @@ def find_books_by_field(field, value):
         results.append(book)
     return results
 
-def print_book_details(book):
-    title_highlight = colored.fg("yellow")
-    author_highlight = colored.fg('light_blue')
-    goodreads_highlight = colored.fg('light_green_3')
-    description_highlight = colored.fg("grey_37")
-    rating_highlight = colored.fg("light_yellow")
+# def print_book_details(book):
+#     title_highlight = colored.fg("yellow")
+#     author_highlight = colored.fg('light_blue')
+#     goodreads_highlight = colored.fg('light_green_3')
+#     description_highlight = colored.fg("grey_37")
+#     rating_highlight = colored.fg("light_yellow")
 
-    title_text = colored.stylize(f"{safe_get(book,'title')}", title_highlight)
-    author_text = colored.stylize(f"{safe_get(book,'author')}", author_highlight)
-    rating_text = colored.stylize(f"{safe_get(book,'rating')}", rating_highlight)
-    goodreads_text = colored.stylize(f"{safe_get(book,'goodreads_url')}", goodreads_highlight)
-    description_text = colored.stylize(f"{safe_get(book,'description')}", description_highlight)
+#     title_text = colored.stylize(f"{safe_get(book,'title')}", title_highlight)
+#     author_text = colored.stylize(f"{safe_get(book,'author')}", author_highlight)
+#     rating_text = colored.stylize(f"{safe_get(book,'rating')}", rating_highlight)
+#     goodreads_text = colored.stylize(f"{safe_get(book,'goodreads_url')}", goodreads_highlight)
+#     description_text = colored.stylize(f"{safe_get(book,'description')}", description_highlight)
 
-    print(f"\n📖 [{i}] {title_text} by {author_text}")
-    print(f"Publisher: {safe_get(book,'publisher')} | Year: {safe_get(book,'date_published')} | Language: {safe_get(book,'language')}")
-    print(f"Genre: {safe_get(book,'genre')} | Pages: {safe_get(book,'pages')} | Rating: {rating_text}")
-    print("Description:")
-    wrapped = textwrap.fill(description_text, width=80)
-    print(wrapped if wrapped != "N/A" else "N/A")
-    print(f"Goodreads: {goodreads_text}\n")
+#     print(f"\n📖 [{i}] {title_text} by {author_text}")
+#     print(f"Publisher: {safe_get(book,'publisher')} | Year: {safe_get(book,'date_published')} | Language: {safe_get(book,'language')}")
+#     print(f"Genre: {safe_get(book,'genre')} | Pages: {safe_get(book,'pages')} | Rating: {rating_text}")
+#     print(f"ISBN 10: {safe_get(book,'isbn10')} | ISBN13: {safe_get(book,'isbn13')}")
+#     print("Description:")
+#     wrapped = textwrap.fill(description_text, width=80)
+#     print(wrapped if wrapped != "N/A" else "N/A")
+#     print(f"Goodreads: {goodreads_text}\n")
 
 def print_book_summary(book, index=None):
-    """Print one-line summary for a book."""
     prefix = f"[{index}] " if index is not None else ""
     title = safe_get(book, "title")
 
@@ -62,7 +147,6 @@ def print_book_summary(book, index=None):
     print(f"{prefix}{title} — {author_text} ({year}) [{genre}]")
 
 
-# ---------- Commands ----------
 def show_book_info(title):
     matches = find_books_by_field("title", title)
     if not matches:
@@ -84,6 +168,7 @@ def show_book_info(title):
         print(f"\n📖 [{i}] {title_text} by {author_text}")
         print(f"Publisher: {safe_get(book,'publisher')} | Year: {safe_get(book,'date_published')} | Language: {safe_get(book,'language')}")
         print(f"Genre: {safe_get(book,'genre')} | Pages: {safe_get(book,'pages')} | Rating: {rating_text}")
+        print(f"ISBN 10: {safe_get(book,'isbn10')} | ISBN13: {safe_get(book,'isbn13')}")
         print("Description:")
         wrapped = textwrap.fill(description_text, width=80)
         print(wrapped if wrapped != "N/A" else "N/A")
@@ -199,7 +284,8 @@ def show_subjects_books(subject):
       print(wrapped if wrapped != "N/A" else "N/A")
 
 
-def show_similar_books(books, isbn):
+def show_similar_books(isbn):
+    global books
     target = None
     for b in books:
         if safe_get(b, "isbn10") == isbn or safe_get(b, "isbn13") == isbn:
@@ -227,11 +313,14 @@ def show_similar_books(books, isbn):
 
 # ---------- Main CLI ----------
 def main():
-    books = load_books()
+    index_pages()
     engine.build_tfidf()
-    engine.summary()
+    # engine.summary()
 
-    print("=== 📚 Book Search Interface ===")
+    print(f"Indexed total number of books: {len(books)}")
+
+
+    print("=== 📚 Book Search ===")
     print("Commands:")
     print(" book <name, desc>         → info about a book")
     print(" downloads <name, desc>    → download links")
@@ -281,4 +370,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+  main()

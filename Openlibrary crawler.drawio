@@ -1,6 +1,6 @@
 <mxfile host="65bd71144e">
     <diagram name="Page-1" id="EWH7wEjr9OUUqdH3Mrud">
-        <mxGraphModel dx="699" dy="455" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+        <mxGraphModel dx="748" dy="479" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
             <root>
                 <mxCell id="0"/>
                 <mxCell id="1" parent="0"/>
@@ -25,17 +25,16 @@
                         <mxPoint x="-1" as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-41" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="hMMrqiuJT1hCBwhJ58dX-2" target="hMMrqiuJT1hCBwhJ58dX-15" edge="1">
+                <mxCell id="6" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="hMMrqiuJT1hCBwhJ58dX-2" target="5">
                     <mxGeometry relative="1" as="geometry">
                         <Array as="points">
-                            <mxPoint x="400" y="329.9999999999998"/>
-                            <mxPoint x="400" y="190"/>
+                            <mxPoint x="480" y="330"/>
                         </Array>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-42" value="Save the URL for the already visited page" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="hMMrqiuJT1hCBwhJ58dX-41" vertex="1" connectable="0">
-                    <mxGeometry x="0.0199" y="2" relative="1" as="geometry">
-                        <mxPoint x="42" as="offset"/>
+                <mxCell id="7" value="save page source as file" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="6">
+                    <mxGeometry x="0.14" relative="1" as="geometry">
+                        <mxPoint y="-26" as="offset"/>
                     </mxGeometry>
                 </mxCell>
                 <mxCell id="hMMrqiuJT1hCBwhJ58dX-2" value="Crawler&lt;div&gt;- fetch and render pages&lt;/div&gt;" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
@@ -60,7 +59,7 @@
                 <mxCell id="hMMrqiuJT1hCBwhJ58dX-4" value="Parser" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="260" y="450" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="3" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="hMMrqiuJT1hCBwhJ58dX-6" target="2">
+                <mxCell id="3" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="hMMrqiuJT1hCBwhJ58dX-6" target="2" edge="1">
                     <mxGeometry relative="1" as="geometry">
                         <mxPoint x="720" y="360" as="targetPoint"/>
                         <Array as="points">
@@ -90,9 +89,6 @@
                 <mxCell id="hMMrqiuJT1hCBwhJ58dX-13" value="Metadata file saver" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="650" y="170" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-15" value="File based visitted URL store" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="260" y="160" width="120" height="60" as="geometry"/>
-                </mxCell>
                 <mxCell id="hMMrqiuJT1hCBwhJ58dX-28" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="hMMrqiuJT1hCBwhJ58dX-25" target="hMMrqiuJT1hCBwhJ58dX-1" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
@@ -101,31 +97,17 @@
                         <mxPoint as="offset"/>
                     </mxGeometry>
                 </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-33" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="hMMrqiuJT1hCBwhJ58dX-25" target="hMMrqiuJT1hCBwhJ58dX-15" edge="1">
-                    <mxGeometry relative="1" as="geometry"/>
-                </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-34" value="On start: Read all visited pages" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" parent="hMMrqiuJT1hCBwhJ58dX-33" vertex="1" connectable="0">
-                    <mxGeometry x="0.465" y="1" relative="1" as="geometry">
-                        <mxPoint x="1" y="-17" as="offset"/>
-                    </mxGeometry>
-                </mxCell>
                 <mxCell id="hMMrqiuJT1hCBwhJ58dX-25" value="In memor visited URL store" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="180" y="570" width="120" height="60" as="geometry"/>
                 </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-39" value="URL queue file store" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
-                    <mxGeometry x="30" y="170" width="120" height="60" as="geometry"/>
-                </mxCell>
-                <mxCell id="hMMrqiuJT1hCBwhJ58dX-40" value="" style="endArrow=classic;startArrow=classic;html=1;rounded=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="hMMrqiuJT1hCBwhJ58dX-1" target="hMMrqiuJT1hCBwhJ58dX-39" edge="1">
-                    <mxGeometry width="50" height="50" relative="1" as="geometry">
-                        <mxPoint x="220" y="430" as="sourcePoint"/>
-                        <mxPoint x="270" y="380" as="targetPoint"/>
-                    </mxGeometry>
-                </mxCell>
-                <mxCell id="4" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="2" target="hMMrqiuJT1hCBwhJ58dX-13">
+                <mxCell id="4" style="edgeStyle=none;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="2" target="hMMrqiuJT1hCBwhJ58dX-13" edge="1">
                     <mxGeometry relative="1" as="geometry"/>
                 </mxCell>
-                <mxCell id="2" value="Sanitizer" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                <mxCell id="2" value="Sanitizer" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
                     <mxGeometry x="650" y="280" width="120" height="50" as="geometry"/>
+                </mxCell>
+                <mxCell id="5" value="Raw page saver" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+                    <mxGeometry x="420" y="170" width="120" height="60" as="geometry"/>
                 </mxCell>
             </root>
         </mxGraphModel>

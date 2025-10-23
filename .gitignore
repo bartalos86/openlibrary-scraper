@@ -1,7 +1,6 @@
 page_sources/
 storage/
 archive/
-*.tsv
 *.png
 HEADERS
 

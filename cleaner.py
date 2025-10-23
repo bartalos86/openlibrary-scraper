@@ -2,8 +2,8 @@ from os import listdir
 import os
 from os.path import isfile, join
 
-from file import sanitize_book_link
-from url import create_link, read_link_queue, read_visited_links, save_link_queue, save_visited_links
+from utils.file import sanitize_book_link
+from utils.url import create_link, read_link_queue, read_visited_links, save_link_queue, save_visited_links
 
 
 
@@ -27,24 +27,11 @@ def clean_forbidden_files():
         files_to_remove.append(file_name)
         last_file = content
 
-  # for link in visited_links:
-  #   file_name = f"page_sources/{sanitize_book_link(link.url)}.html"
-  #   with open(file_name, "r") as f:
-  #     if "<html><head><title>403 Forbidden</title></head>" in f.read():
-  #       files_to_remove.append(file_name)
-  #       link_queue.append(create_link(link.url, link.parent))
-  #     else:
-  #       new_visited_links.append(link)
-
   print(last_file)
   print(f"File to remove: {len(files_to_remove)}")
   input()
 
   for file in files_to_remove:
     os.remove(file)
-
-  # save_link_queue(link_queue)
-  # save_visited_links(new_visited_links)
-
 
 clean_forbidden_files()

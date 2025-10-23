@@ -4,7 +4,7 @@ from collections import defaultdict, Counter
 
 
 class BookSearchEngine:
-    def __init__(self, idf_mode: str = "standard"):
+    def __init__(self, idf_mode = "standard"):
         """
         idf_mode: 'standard' (log(N/df)) or 'probabilistic' (BM25-style)
         """
@@ -39,7 +39,6 @@ class BookSearchEngine:
             "subjects": [],
         }
 
-        # Positional indexes for phrase searching
         self.position_indexes = {
             "all": defaultdict(lambda: defaultdict(list)),
             "title": defaultdict(lambda: defaultdict(list)),
@@ -59,10 +58,9 @@ class BookSearchEngine:
         }
         self.N = 0
 
-    # --- Document loading & indexing ---
-    def add_book(self, book: dict):
+    def add_book(self, book):
         """
-        Adds a book and indexes it in multiple specialized indexes.
+        Adds a book and indexes it in all specialized indexes.
         """
         book_id = book.get("id") or self.N
 
@@ -84,11 +82,11 @@ class BookSearchEngine:
       for term in unique_terms:
           self.indexes[index_name][term].add(doc_id)
           self.doc_freqs[index_name][term] += 1
-      # Build positional index for phrase searching
+      #Positional index for phrase searching
       for pos, term in enumerate(terms):
           self.position_indexes[index_name][term][doc_id].append(pos)
 
-    def _tokenize(self, text: str):
+    def _tokenize(self, text):
         return re.findall(r'\w+', text.lower())
 
     def build_tfidf(self):
@@ -96,7 +94,6 @@ class BookSearchEngine:
       for index_name in self.indexes.keys():
           self.tfidf_vectors[index_name] = []
           for doc_id, (_, book) in enumerate(self.documents):
-              # Get appropriate fields for this index
               if index_name == "all":
                   combined_text = " ".join([
                       str(v) for v in book.values() if isinstance(v, str)
@@ -124,8 +121,7 @@ class BookSearchEngine:
                   vec[term] = (1 + math.log10(tf)) * idf
               self.tfidf_vectors[index_name].append(vec)
 
-    # --- IDF Methods ---
-    def _idf(self, term: str, index_name: str = "all"):
+    def _idf(self, term, index_name = "all"):
         """Calculate IDF for a term in a specific index."""
         df = self.doc_freqs[index_name].get(term, 0)
         if df == 0:
@@ -135,7 +131,6 @@ class BookSearchEngine:
         else:
             return math.log10(self.N / df)
 
-    # --- Cosine Similarity ---
     def _cosine_similarity(self, v1, v2):
         common = set(v1.keys()) & set(v2.keys())
         num = sum(v1[t] * v2[t] for t in common)
@@ -143,12 +138,9 @@ class BookSearchEngine:
         den2 = math.sqrt(sum(v**2 for v in v2.values()))
         return num / (den1 * den2) if den1 and den2 else 0.0
 
-    def _parse_boolean_query(self, query: str):
+    def _parse_boolean_query(self, query):
         """
-        Parse boolean query into tokens. Supports:
-        - AND, OR, NOT operators
-        - Quoted phrases: "science fiction"
-        - Parentheses for grouping: (term1 OR term2) AND term3
+        Parse boolean query into tokens
         """
         # Extract quoted phrases first
         phrases = re.findall(r'"([^"]+)"', query)
@@ -224,11 +216,11 @@ class BookSearchEngine:
 
     def _evaluate_boolean_expression(self, tokens, index, index_name):
         """
-        Recursively evaluate boolean expression with support for parentheses.
+        Recursively evaluate boolean expression.
         Returns (result_set, next_position)
         """
         result_set = None
-        current_op = "OR"  # default operator
+        current_op = "OR"
         i = 0
 
         while i < len(tokens):
@@ -239,7 +231,7 @@ class BookSearchEngine:
                 i += 1
                 continue
 
-            # Handle opening parenthesis - recursively evaluate subexpression
+            # Handle opening parenthesis, recursively evaluate subexpression
             if token_type == "PAREN" and token_value == "(":
                 # Find matching closing parenthesis
                 paren_count = 1
@@ -252,12 +244,10 @@ class BookSearchEngine:
                             paren_count -= 1
                     j += 1
 
-                # Recursively evaluate subexpression
                 sub_tokens = tokens[i+1:j-1]
                 current_set, _ = self._evaluate_boolean_expression(sub_tokens, index, index_name)
                 i = j
 
-                # Apply operator to the subexpression result
                 if result_set is None:
                     result_set = current_set
                 elif current_op == "AND":
@@ -268,11 +258,10 @@ class BookSearchEngine:
                     result_set = result_set - current_set
                 continue
 
-            # Handle closing parenthesis - end of current expression
+            # Handle closing parenthesis
             elif token_type == "PAREN" and token_value == ")":
                 break
 
-            # Get document set for current term/phrase
             elif token_type == "PHRASE":
                 current_set = self._phrase_search(token_value, index_name)
                 i += 1
@@ -284,7 +273,6 @@ class BookSearchEngine:
                 i += 1
                 continue
 
-            # Apply operator
             if result_set is None:
                 result_set = current_set
             elif current_op == "AND":
@@ -298,20 +286,7 @@ class BookSearchEngine:
 
     def boolean_search(self, query: str, top_n=5, index_name: str = "all"):
         """
-        Boolean search supporting AND, OR, NOT, phrases, and grouping.
-
-        Args:
-            query: Search query with boolean operators
-            top_n: Number of results to return
-            index_name: Which index to search ("all", "title", "author", "genre", "description", "publisher")
-
-        Examples:
-            - "science fiction" AND asimov
-            - tolkien OR fantasy
-            - fantasy NOT romance
-            - (tolkien OR asimov) AND fantasy
-            - fantasy AND (NOT romance)
-            - (author1 OR author2) AND (genre1 OR genre2)
+        Boolean search. Supported operators:  AND, OR, NOT, phrases, and grouping.
         """
         tokens = self._parse_boolean_query(query)
 
@@ -320,10 +295,9 @@ class BookSearchEngine:
 
         index = self.indexes[index_name]
 
-        # Evaluate the boolean expression
         result_set, _ = self._evaluate_boolean_expression(tokens, index, index_name)
 
-        # Handle case where query starts with NOT
+        # NOT as first expression
         if tokens and tokens[0][0] == "OP" and tokens[0][1] == "NOT":
             all_docs = set(bid for bid, _ in self.documents)
             result_set = all_docs - (result_set or set())
@@ -331,7 +305,6 @@ class BookSearchEngine:
         if not result_set:
             return []
 
-        # Score remaining documents using TF-IDF from the specific index
         scores = []
         query_terms = self._tokenize(query)
         q_counts = Counter(query_terms)
@@ -348,21 +321,13 @@ class BookSearchEngine:
         scores.sort(key=lambda x: x[-1], reverse=True)
         return scores[:top_n]
 
-    # --- Standard Searching ---
     def search(self, query: str, top_n=5, use_boolean=False, index_name: str = "all"):
         """
         Search for a query.
-
-        Args:
-            query: Search query
-            top_n: Number of results to return
-            use_boolean: Force boolean interpretation
-            index_name: Which index to search ("all", "title", "author", "genre", "description", "publisher")
         """
         if use_boolean or any(op in query.upper() for op in [" AND ", " OR ", " NOT "]):
             return self.boolean_search(query, top_n, index_name)
 
-        # Standard TF-IDF search in specific index
         query_terms = self._tokenize(query)
         q_counts = Counter(query_terms)
         q_vec = {}
@@ -378,32 +343,3 @@ class BookSearchEngine:
 
         scores.sort(key=lambda x: x[-1], reverse=True)
         return scores[:top_n]
-
-    # --- Searching ---
-    def search(self, query: str, top_n=5):
-        """
-        Search for a query. If return_full=True, return (book_id, book_dict, score),
-        otherwise return only (book_id, score).
-        """
-        query_terms = self._tokenize(query)
-        q_counts = Counter(query_terms)
-        q_vec = {}
-        for term, tf in q_counts.items():
-            idf = self._idf(term)
-            q_vec[term] = (1 + math.log10(tf)) * idf
-
-        scores = []
-        for doc_id, (book_id, book) in enumerate(self.documents):
-            score = self._cosine_similarity(q_vec, self.tfidf_vectors[doc_id])
-            if score > 0:
-              scores.append((book_id, book, score))
-
-
-        scores.sort(key=lambda x: x[-1], reverse=True)
-        return scores[:top_n]
-
-    def summary(self):
-        print(f"Documents indexed: {self.N}")
-        # print(f"Unique terms: {len(self.index)}")
-        # print(f"IDF mode: {self.idf_mode}")
-        # print("Example terms:", list(self.index.keys())[:10])

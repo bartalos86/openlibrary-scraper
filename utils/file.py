@@ -37,7 +37,6 @@ def save_book_page_source(source, book_title):
   if not book_title or book_title == "N/A":
         book_title = f"unknown_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
 
-    # Sanitize filename (remove invalid characters)
   safe_title = sanitize_book_link(book_title)
 
   filename = generate_link_path(safe_title)
@@ -76,22 +75,3 @@ def append_book_to_file(book_metadata):
   with open("books.tsv", "a") as f:
     values = [sanitize_value(book_metadata[k]) for k in book_metadata.keys()]
     f.write("\t".join(values) + "\n")
-
-
-
-        # f.write(f"""{book_metadata["title"]}\t
-        # {book_metadata["cover_url"]}\t
-        # {book_metadata["author"]}\t
-        # {book_metadata["rating"]}\t
-        # {book_metadata["date_published"]}\t
-        # {book_metadata["publisher"]}\t
-        # {book_metadata["language"]}\t
-        # {book_metadata["pages"]}\t
-        # {book_metadata["isbn10"]}\t
-        # {book_metadata["isbn13"]}\t
-        # {book_metadata["goodreads_url"]}\t
-        # {book_metadata["download_pdf_url"]}\t
-        # {book_metadata["download_text_url"]}\t
-        # {book_metadata["download_epub_url"]}\t
-        # {book_metadata["download_mobi_url"]}\t
-        # {book_metadata["download_daisy_url"]}\n""")

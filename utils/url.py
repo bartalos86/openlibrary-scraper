@@ -6,7 +6,7 @@ import os
 import re
 from selenium.webdriver.common.by import By
 
-from models import Link
+from models.models import Link
 
 
 def read_visited_links():
@@ -58,13 +58,6 @@ def save_link_queue(link_queue):
       writer.writerow([link.url, link.parent, link.date_accessed.isoformat() if link.date_accessed else None])
 
 
-# def get_links_from_page(page_source):
-#   book_covers = page_driver.find_elements(By.CLASS_NAME,"book-cover")
-#   book_links = []
-#   for book in book_covers:
-#     book_links.append(book.find_element(By.TAG_NAME, "a").get_attribute("href"))
-
-  # return book_links
 
 def get_links_from_page(page_source, page_url):
     base_url = "https://openlibrary.org"
@@ -83,8 +76,7 @@ def get_links_from_page(page_source, page_url):
       elif href.startswith(base_url):
           unique_links.add(href)
 
-
-    links = [create_link(url, page_url) for url in list(unique_links)]
+    links = [create_link(url, page_url) for url in sorted(unique_links)]
 
     return links
 
@@ -105,6 +97,12 @@ def get_not_visited_from_new_links(visited_links, link_queue, new_links):
 
   return not_visited
 
+def get_not_visited_from_new_links_optimized(visited_urls, queued_urls, new_links):
+  not_visited = []
+  for new_link in new_links:
+      if (new_link.url not in visited_urls and new_link.url not in queued_urls):
+          not_visited.append(new_link)
+  return not_visited
 
 def get_book_id_from_link(href):
   match = re.search(r'/books/([^/]+)', href)
