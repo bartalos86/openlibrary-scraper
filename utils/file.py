@@ -6,12 +6,33 @@ import re
 
 STARTING = 1
 
+import re
+
 def sanitize_value(value):
     if value is None:
         return "N/A"
-    sanitized = str(value).replace('\n', ' ').replace('\r', ' ').replace('\t', ' ')
-    sanitized = ' '.join(sanitized.split())
-    return sanitized
+    s = str(value)
+
+    s = re.sub(r'&(quot|#34);', '"', s, flags=re.I)
+    s = re.sub(r'&(apos|#39);', "'", s, flags=re.I)
+    s = re.sub(r'&(nbsp|#160);', ' ', s, flags=re.I)
+    s = re.sub(r'&(amp|lt|gt);', '', s, flags=re.I)
+    s = s.replace('\\"', '"').replace("\\'", "'")
+    s = re.sub(r'(?i)quot;', '', s)
+
+    s = re.sub(r'<!--.*?-->', '', s)
+    s = re.sub(r'<[^>]+>', '', s)
+
+    s = re.sub(r'\{\{.*?\}\}', '', s)
+    s = re.sub(r'\|[^\|\n]*=', '', s)  # removes "| key = something"
+    s = re.sub(r'\[\[(?:[^\]|]*\|)?([^\]]+)\]\]', r'\1', s)
+
+    s = re.sub(r'^[\s"\'\\]+|[\s"\'\\]+$', '', s)
+
+    s = re.sub(r'\s+', ' ', s).strip()
+
+    return s if s else "N/A"
+
 
 def save_book(book_metadata):
   global STARTING

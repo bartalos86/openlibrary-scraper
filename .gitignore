@@ -4,11 +4,16 @@ archive/
 *.png
 HEADERS
 
+pylucene
+books-o.tsv
+spark_extracted
+books_index
+data
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
+.DS_Store
 # C extensions
 *.so
 

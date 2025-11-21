@@ -42,7 +42,7 @@ def try_get_page(page):
     driver.execute_cdp_cmd("Network.setUserAgentOverride", {"userAgent": random_headers["User-Agent"], "acceptLanguage": random_headers["Accept-Language"]})
 
     driver.get(page)
-    wait_delay = random.randrange(5, 10, 1)
+    wait_delay = random.randrange(5, 6, 1)
     driver.implicitly_wait(wait_delay)
     time.sleep(wait_delay)
     source = driver.page_source

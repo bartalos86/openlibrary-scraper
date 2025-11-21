@@ -49,7 +49,7 @@ class BookSearchEngine:
         }
         self.field_groups = {
             "title": ["title", "description", "genre", "language", "publisher"],
-            "author": ["author"],
+            "author": ["author", "authors"],
             "language": ["language"],
             "publisher": ["publisher"],
             "subjects": ["subjects_people", "subjects_places"],
@@ -57,6 +57,22 @@ class BookSearchEngine:
                    "description", "series", "subjects_people", "subjects_places"]
         }
         self.N = 0
+
+    def _extract_field_value(self, value):
+        if isinstance(value, str):
+            return value
+        elif isinstance(value, list):
+            extracted = []
+            for item in value:
+                if isinstance(item, dict):
+                    extracted.extend(str(v) for v in item.values() if v is not None)
+                else:
+                    extracted.append(str(item))
+            return " ".join(extracted)
+        elif isinstance(value, dict):
+            return " ".join(str(v) for v in value.values() if v is not None)
+        else:
+            return str(value) if value is not None else ""
 
     def add_book(self, book):
         """
@@ -68,9 +84,7 @@ class BookSearchEngine:
 
         # Index in each specialized index
         for index_name, fields in self.field_groups.items():
-            combined_text = " ".join([
-                str(book.get(f, "")) for f in fields if book.get(f)
-            ])
+            combined_text = " ".join(self._extract_field_value(book.get(f, "")) for f in fields)
             self._index_text(book_id, combined_text, index_name)
 
         self.N += 1
@@ -316,7 +330,7 @@ class BookSearchEngine:
         for doc_id, (book_id, book) in enumerate(self.documents):
             if book_id in result_set:
                 score = self._cosine_similarity(q_vec, self.tfidf_vectors[index_name][doc_id])
-                scores.append((book_id, book, score if score > 0 else 0.1))
+                scores.append({"book": book, "score": score if score > 0 else 0.1})
 
         scores.sort(key=lambda x: x[-1], reverse=True)
         return scores[:top_n]
@@ -339,7 +353,7 @@ class BookSearchEngine:
         for doc_id, (book_id, book) in enumerate(self.documents):
             score = self._cosine_similarity(q_vec, self.tfidf_vectors[index_name][doc_id])
             if score > 0:
-                scores.append((book_id, book, score))
+                scores.append({"book": book, "score": score})
 
         scores.sort(key=lambda x: x[-1], reverse=True)
         return scores[:top_n]

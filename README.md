@@ -255,3 +255,286 @@ The indexer part of the application can be started using `python3 menu.py <idf_m
 
 Unit tests for testing the regex snippets on sample books are in the `test` folder. The correct results are in the `expencted_results.tsv` and the html files are in the `test/test_html` folder.
 The tests can be run using `python3 regex_test.py`
+
+
+## Consultation 3
+
+- Extractor rewritten to use spark for parallel file processing
+- TSV files are loaded using spark: `books_df = spark.read.option("header", True).option("sep", "\t").csv(DATA_FILE)`
+- Scraping of author data from wikipedia dump:
+  - For each author for each book we join the following author iformation from wikipedia if available:`born, died, occupation, notable_works, notable_awards`, this is joined list of struct for each book
+
+Join code:
+```python
+    books_exploded = (
+        books_df
+        .withColumn("author_name", explode(split(col("author"), ",")))
+        .withColumn("author_name", trim(col("author_name")))
+    )
+    joined = (
+        books_exploded
+        .join(broadcast(authors_df),
+              books_exploded.author_name == authors_df.author_title,
+              "left")
+        .withColumn(
+            "has_info",
+            when(
+                col("born").isNotNull(),
+                True
+            ).otherwise(False)
+        )
+        .filter(col("has_info"))
+        .groupBy(*books_df.columns)
+        .agg(
+            collect_list(
+                struct(
+                    col("author_name"),
+                    col("born"),
+                    col("died"),
+                    col("occupation"),
+                    col("notable_works"),
+                    col("notable_awards")
+                )
+            ).alias("authors")
+        )
+    )
+```
+
+## Statistics:
+- Loaded 7677 unique authors
+- Extracted 4239 author entries from Wikipedia dump
+
+
+# Consultation 4
+
+- Field indexing rewritten using PyLucene
+- Indexes created:
+  - all (all fields) - This is for we just want to seach based on all book information (BOOLEAN, Phrase)
+  - title (book info: title, desc, genre...) - This is for the case when we do not want to include unnecessary informaton such as subjects and place information (BOOLEAN, Phrase)
+  - author (all author infor from spark wiki processing) - This is when we want to look up books by author and we want to see additional author information (BOOLEAN, Phrase)
+  - language - We want to search by language (BOOLEAN, Phrase)
+  - date_published - Range search when we want to limit the `all fields` search to a date range when the book was published (Range ,BOOLEAN, Phrase)
+  - publisher - Publisher search (BOOLEAN, Phrase)
+  - subjects - Subjects search (BOOLEAN, Phrase)
+- Used query options:
+  - BOOLEAN, Phrase search: supported for all the indexes
+  - Range: supported for the `published` index ( example date format support: `July 6, 2005` )
+- Search and indexing function rewritten to PyLucene
+
+## Implmentation
+
+### Indexing
+```python
+    def add_book(self, book):
+        doc = Document()
+
+        doc.add(StringField("id", str(book["id"]), Field.Store.YES))
+
+        for idx_name, fields in self.FIELD_GROUPS.items():
+            if idx_name == "date_published":
+                parsed_date = LuceneIndexer.parse_date(book["date_published"])
+                if parsed_date == None:
+                    parsed_date = "000000000"
+                doc.add(TextField("date_published", parsed_date, Field.Store.NO))
+            else:
+                combined = " ".join(self._extract_field_value(book.get(f, "")) for f in fields)
+                doc.add(TextField(idx_name, combined, Field.Store.NO))
+
+        # Fields for retrival
+        for key, value in book.items():
+            if key != "id":
+                doc.add(TextField(key, str(value), Field.Store.YES))
+
+        self.writer.updateDocument(Term("id", str(book["id"])), doc)
+
+```
+### Search
+```python
+  def search(self, query, index_name="all", top_n=5):
+        search_field = index_name
+
+        reader = DirectoryReader.open(self.directory)
+        searcher = IndexSearcher(reader)
+
+        lucene_query = self._parse_query(query, search_field)
+        results = searcher.search(lucene_query, top_n)
+
+        out = []
+        for sd in results.scoreDocs:
+            doc = searcher.storedFields().document(sd.doc)
+            book_data = {"score": sd.score, "book": {}}
+            for field in doc.getFields():
+                field_name = field.name()
+                field_value = doc.get(field_name)
+                clean_name = field_name.replace("raw_", "") if field_name.startswith("raw_") else field_name
+
+
+                if clean_name == "authors":
+                     book_data["book"][clean_name] = eval(field_value) # this is a JSON Object
+                else:
+                    book_data["book"][clean_name] = field_value
+
+            out.append(book_data)
+
+        return out
+```
+
+## Query results comparison
+
+### Query 1: language French OR Dutch
+#### Lucene
+```
+ Books in language: 'French OR Dutch':
+[1] Nelly — Charles Dickens,Bernardo Moreno Carrillo (2010-12-31) [N/A] - Dutch
+[2] Slechte Tijden — Charles Dickens (2011-10-12) [N/A] - Dutch
+[3] De Draken van de Herfstschemer — Margaret Weis,Tracy Hickman,Paul Boehmer,Andrew Dabb,Steve Kurth,Stefano Raffaele,Margarett Weiss (2009-03-25) [N/A] - Dutch
+[4] La Petite Sirene (French Well Loved Tales) — Hans Christian Andersen,Yayoi Kusama,Bernadette Watts (March 1990) [N/A] - French
+[5] Dragons d'un crépuscule d'automne — Margaret Weis,Tracy Hickman,Paul Boehmer,Andrew Dabb,Steve Kurth,Stefano Raffaele,Margarett Weiss (May 24, 2002) [N/A] - French
+```
+#### Previous
+```
+📚 Books in language: 'French OR Dutch':
+[1] Nelly — Charles Dickens,Bernardo Moreno Carrillo (2010-12-31) [N/A] - Dutch
+[2] Slechte Tijden — Charles Dickens (2011-10-12) [N/A] - Dutch
+[3] De Draken van de Herfstschemer — Margaret Weis,Tracy Hickman,Paul Boehmer,Andrew Dabb,Steve Kurth,Stefano Raffaele,Margarett Weiss (2009-03-25) [N/A] - Dutch
+[4] La Petite Sirene (French Well Loved Tales) — Hans Christian Andersen,Yayoi Kusama,Bernadette Watts (March 1990) [N/A] - French
+[5] Dragons d'un crépuscule d'automne — Margaret Weis,Tracy Hickman,Paul Boehmer,Andrew Dabb,Steve Kurth,Stefano Raffaele,Margarett Weiss (May 24, 2002) [N/A] - French
+```
+### Query 2: book company
+#### Lucene
+```
+📖 [1] Spring of 1897 by J.T. Lovett Company
+Publisher: Lovett Company | Year: 1897 | Language: English
+Genre: N/A | Pages: N/A | Rating: N/A
+ISBN 10: N/A | ISBN13: N/A
+Description:
+N/A
+Goodreads: N/A
+People subjects:
+N/A
+Place subjects:
+New Jersey,Little Silver
+
+📖 [2] Hill's evergreens by D. Hill Nursery Company
+Publisher: D. Hill Nursery Company, Inc.] | Year: 1921 | Language: English
+Genre: N/A | Pages: N/A | Rating: N/A
+ISBN 10: N/A | ISBN13: N/A
+Description:
+N/A
+Goodreads: N/A
+People subjects:
+N/A
+Place subjects:
+Illinois,Dundee
+
+📖 [3] Wholesale price list, no. 69, January 15, 1943 by Corbin Seed Company
+Publisher: Corbin Seed Company | Year: 1943 | Language: English
+Genre: N/A | Pages: N/A | Rating: N/A
+ISBN 10: N/A | ISBN13: N/A
+Description:
+N/A
+Goodreads: N/A
+People subjects:
+N/A
+Place subjects:
+Georgia,Savannah
+```
+#### Previous
+```
+📖 [1] Spring of 1897 by J.T. Lovett Company
+Publisher: Lovett Company | Year: 1897 | Language: English
+Genre: N/A | Pages: N/A | Rating: N/A
+ISBN 10: N/A | ISBN13: N/A
+Description:
+N/A
+Goodreads: N/A
+People subjects:
+N/A
+Place subjects:
+New Jersey,Little Silver
+
+📖 [2] Hill's evergreens by D. Hill Nursery Company
+Publisher: D. Hill Nursery Company, Inc.] | Year: 1921 | Language: English
+Genre: N/A | Pages: N/A | Rating: N/A
+ISBN 10: N/A | ISBN13: N/A
+Description:
+N/A
+Goodreads: N/A
+People subjects:
+N/A
+Place subjects:
+Illinois,Dundee
+
+📖 [3] Wholesale price list, no. 69, January 15, 1943 by Corbin Seed Company
+Publisher: Corbin Seed Company | Year: 1943 | Language: English
+Genre: N/A | Pages: N/A | Rating: N/A
+ISBN 10: N/A | ISBN13: N/A
+Description:
+N/A
+Goodreads: N/A
+People subjects:
+N/A
+Place subjects:
+Georgia,Savannah
+```
+
+### Query 3: author "Oliver Hoare"
+#### Lucene
+```
+ Books by "Oliver Hoare":
+[1] The Raf in Camera 1903-1939 — Roy Conyers Nesbit,Oliver Hoare (June 1997) [N/A]
+
+👤 [1] Roy Conyers Nesbit
+Born: None
+Birth place: None
+Died: None
+
+Nationality: None
+Works: None
+Awards: None
+Spouse: None
+
+
+👤 [2] Oliver Hoare
+Born: 18 July 1945
+Birth place: London, England
+Died: 2018-08-23
+
+Nationality: None
+Works: None
+Awards: None
+Spouse: None
+```
+#### Previous
+```
+ Books by "Oliver Hoare":
+[1] The Raf in Camera 1903-1939 — Roy Conyers Nesbit,Oliver Hoare (June 1997) [N/A]
+
+👤 [1] Roy Conyers Nesbit
+Born: None
+Birth place: None
+Died: None
+
+Nationality: None
+Works: None
+Awards: None
+Spouse: None
+
+
+👤 [2] Oliver Hoare
+Born: 18 July 1945
+Birth place: London, England
+Died: 2018-08-23
+
+Nationality: None
+Works: None
+Awards: None
+Spouse: None
+```
+
+### Query 4: published 1980 1985 Dune
+#### Only supported in the lucene version
+```
+[1] Heretics of Dune — Frank Herbert (1985) [N/A]
+[2] God Emperor of Dune — Frank Herbert (1982) [N/A]
+```

@@ -18,7 +18,13 @@ def safe_find_multiple_properties(source: str, pattern: str, group: int = 1):
     if not matches:
         return "N/A"
     cleaned = [m.strip() for m in matches if m.strip()]
-    return ",".join(cleaned)
+    seen = set()
+    unique = []
+    for item in cleaned:
+        if item not in seen:
+            seen.add(item)
+            unique.append(item)
+    return ",".join(unique)
 
 
 def extract_book_page_metadata(page_source: str, log: bool = True):
