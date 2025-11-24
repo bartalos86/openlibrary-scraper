@@ -9,6 +9,7 @@ from org.apache.lucene.search import (
 )
 from org.apache.lucene.search.similarities import BM25Similarity
 from org.apache.lucene.store import FSDirectory
+from org.apache.lucene.queryparser.classic import MultiFieldQueryParser
 
 from datetime import datetime
 
@@ -19,7 +20,7 @@ class LuceneIndexer:
             "publisher", "series", "subjects_people", "subjects_places", "authors"
         ],
         "title": ["title", "description", "genre", "language", "publisher"],
-        "author": ["author", "authors"],
+        "author": ["author", "authors_processed"],
         "language": ["language"],
         "date_published": ["date_published"],
         "publisher": ["publisher"],
@@ -73,75 +74,98 @@ class LuceneIndexer:
 
         doc.add(StringField("id", str(book["id"]), Field.Store.YES))
 
-        # Create indexes
-        for idx_name, fields in self.FIELD_GROUPS.items():
-            if idx_name == "date_published":
-                parsed_date = LuceneIndexer.parse_date(book["date_published"])
-                if parsed_date == None:
-                    parsed_date = "000000000"
-                doc.add(TextField("date_published", parsed_date, Field.Store.NO))
-            else:
-                combined = " ".join(self._extract_field_value(book.get(f, "")) for f in fields)
-                doc.add(TextField(idx_name, combined, Field.Store.NO))
-
-        # Fields for retrival
         for key, value in book.items():
+            # Handling json
+            if key == "authors":
+                doc.add(TextField("authors_processed", str(self._extract_field_value(book.get("authors", ""))), Field.Store.YES))
+                # Store for retrieval
+                doc.add(TextField("authors", str(book.get("authors", "")), Field.Store.YES))
+                continue;
+
             if key != "id":
                 doc.add(TextField(key, str(value), Field.Store.YES))
+
 
         self.writer.updateDocument(Term("id", str(book["id"])), doc)
 
     def commit(self):
         self.writer.commit()
 
-    def _make_term_query(self, field, term):
-        return TermQuery(Term(field, term.lower()))
+    # def _parse_query(self, query, fields):
+    #     if isinstance(fields, str):
+    #         fields = [fields]
 
-    def _make_phrase_query(self, field, phrase):
-        builder = PhraseQuery.Builder()
-        for word in phrase.lower().split():
-            builder.add(Term(field, word))
-        return builder.build()
+    #     tokens = []
+    #     i = 0
+    #     while i < len(query):
+    #         if i < len(query) and query[i] == '"':
+    #             j = query.find('"', i + 1)
+    #             if j == -1:
+    #                 j = len(query)
+    #             phrase = query[i + 1:j]
+    #             if phrase:
+    #                 tokens.append(("PHRASE", phrase))
+    #             i = j + 1
+    #         elif not query[i].isspace():
+    #             j = i
+    #             while j < len(query) and not query[j].isspace() and query[j] != '"':
+    #                 j += 1
+    #             word = query[i:j]
+    #             if word:
+    #                 tokens.append(("WORD", word))
+    #             i = j
+    #         else:
+    #             i += 1
+    #     # If single field, just return that query
+    #     if len(fields) == 1:
+    #         return self.build_single_field_query(fields[0], tokens)
 
-    def _parse_query(self, query, field):
-        tokens = []
-        i = 0
-        while i < len(query):
-            if query[i] == '"':
-                j = query.find('"', i + 1)
-                phrase = query[i + 1:j]
-                tokens.append(("PHRASE", phrase))
-                i = j + 1
-            else:
-                j = i
-                while j < len(query) and not query[j].isspace():
-                    j += 1
-                tokens.append(("WORD", query[i:j]))
-                i = j + 1
+    #     # For multiple fields: (field1_query) OR (field2_query) OR ...
+    #     multi_field_builder = BooleanQuery.Builder()
+    #     multi_field_builder.setMinimumNumberShouldMatch(1)
+    #     for field in fields:
+    #         field_query = self.build_single_field_query(field, tokens)
+    #         multi_field_builder.add(field_query, BooleanClause.Occur.SHOULD)
 
-        b = BooleanQuery.Builder()
-        current_op = "OR"
-
-        for ttype, val in tokens:
-            if val.upper() in ["AND", "OR", "NOT"]:
-                current_op = val.upper()
-                continue
-
-
-            if ttype == "PHRASE":
-                q = self._make_phrase_query(field, val)
-            else:
-                q = self._make_term_query(field, val)
+    #     return multi_field_builder.build()
 
 
-            if current_op == "AND":
-                b.add(q, BooleanClause.Occur.MUST)
-            elif current_op == "NOT":
-                b.add(q, BooleanClause.Occur.MUST_NOT)
-            else:
-                b.add(q, BooleanClause.Occur.SHOULD)
+    def _parse_query(self, query_text, fields):
+        if isinstance(fields, str):
+            fields = [fields]
 
-        return b.build()
+        try:
+            flags = [BooleanClause.Occur.SHOULD] * len(fields)
+            return MultiFieldQueryParser.parse(query_text, fields, flags, self.analyzer)
+        except Exception as e:
+            print(f"Query parsing error: {e}")
+            return None
+
+    # def build_single_field_query(self, field, tokens):
+    #     b = BooleanQuery.Builder()
+    #     current_op = "OR"
+
+    #     for ttype, val in tokens:
+    #         if val.upper() in ["AND", "OR", "NOT"]:
+    #             current_op = val.upper()
+    #             continue
+
+    #         if ttype == "PHRASE":
+    #             phrase_builder = PhraseQuery.Builder()
+    #             for word in val.lower().split():
+    #                 phrase_builder.add(Term(field, word))
+    #             q = phrase_builder.build()
+    #         else:
+    #             q = TermQuery(Term(field, val.lower()))
+
+    #         if current_op == "AND":
+    #             b.add(q, BooleanClause.Occur.MUST)
+    #         elif current_op == "NOT":
+    #             b.add(q, BooleanClause.Occur.MUST_NOT)
+    #         else:
+    #             b.add(q, BooleanClause.Occur.SHOULD)
+
+    #     return b.build()
 
     def search_by_date_range(self, start_date=None, end_date=None, query_text=None, index_name="all", top_n=5):
         reader = DirectoryReader.open(self.directory)
@@ -151,8 +175,9 @@ class LuceneIndexer:
 
         date_query = TermRangeQuery.newStringRange("date_published", start, end, True, True)
 
+        search_field = self.FIELD_GROUPS[index_name]
         if query_text:
-            text_query = self._parse_query(query_text, index_name)
+            text_query = self._parse_query(query_text, search_field)
             b = BooleanQuery.Builder()
             b.add(date_query, BooleanClause.Occur.MUST)
             b.add(text_query, BooleanClause.Occur.MUST)
@@ -181,12 +206,13 @@ class LuceneIndexer:
 
 
     def search(self, query, index_name="all", top_n=5):
-        search_field = index_name
+        search_field = self.FIELD_GROUPS[index_name]
 
         reader = DirectoryReader.open(self.directory)
         searcher = IndexSearcher(reader)
 
         lucene_query = self._parse_query(query, search_field)
+        print(lucene_query);
         results = searcher.search(lucene_query, top_n)
 
         out = []
