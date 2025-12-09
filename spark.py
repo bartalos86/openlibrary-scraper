@@ -235,7 +235,6 @@ def process_books(books_df, spark):
                 True
             ).otherwise(False)
         )
-        # .filter(col("has_info"))
         .groupBy(*books_df.columns)
         .agg(
             collect_list(

@@ -541,3 +541,73 @@ Spouse: None
 [1] Heretics of Dune — Frank Herbert (1985) [N/A]
 [2] God Emperor of Dune — Frank Herbert (1982) [N/A]
 ```
+
+
+## Consolutation 5
+
+Search comaprison with the original site:
+
+- All: dune
+  - Website:
+    - Dune by Frank Herbert
+    - Dune Messiah: Dune Chronicles, Book 2 by Frank Herbert
+    - Das Haus an der Düne by Agatha Christie
+    - Chronique d'une mort annoncée by Gabriel García Márquez, Francis Salvery, and Arthur Daniel
+  - Program:
+    - Dune by Frank Herbert
+    - Heretics of Dune by Frank Herbert
+    - God Emperor of Dune by Frank Herbert
+- All: animals
+  - Website:
+    - Animal Farm by George Orwell
+    - Loup des Steppes: Une Histoire Fantastique, la Faction Est Mêlée à la Réalité, les Différentes Expériences Marquées Par un Personnage Mi-Humain et Mi-animal
+    - Railway Children: Because Girls Are So Much Softer and Weaker... that's Why All the Animals Are So Good to the Mother Animals. They Never Fight Them. Their Hearts Are Soft, Too. So That a Man Has to Be Very Careful Not Only of His Fists, but of His Words
+    - Coloring Book: Animal Shelter Coworker Animal Keeper 69 Pages - 8 X 10 Inchesby Donald Nguyen
+    - We're Going on a Bear Hunt: Let's Discover Seaside Animals by Michael Rosen
+  - Program:
+    - Animal Farm by George Orwell
+    - Animal physiology by Knut Schmidt-Nielsen
+    - Animal diversity by Cleveland P. Hickman, Jr.,Larry S. Roberts
+    - Animal magick by D. J. Conway
+    - Animal Man, Book 1 - Animal Man by Grant Morrison,Chas Truog,Doug Hazlewood,Tom Grummett
+- Author: "C.S Lewis"
+  - Website:
+    - Mere Christianity: the case for Christianity, Christian behaviour, and Beyond personality by C.S. Lewis
+    - The Lion, the Witch and the Wardrobe by C.S. Lewis
+    - Prince Caspian / The Voyage of the Dawn Treader by C.S. Lewis
+    - The Last Battle by C.S. Lewis
+    - The voyage of the Dawn Treader: a story for children
+  - Program:
+    - Prince Caspian / The Voyage of the Dawn Treader — C.S. Lewis
+    - The Abolition of Man — C.S. Lewis
+    - The dark tower, and other stories — C.S. Lewis
+    - The Horse and his Boy — C.S. Lewis
+    - The Kingfisher book of great boy stories — C.S. Lewis,Philippa Pearce, Mark Twain....
+- Subjects: London AND "New York"
+  - Website:
+    - Peter Pan (version 2) by J. M. Barrie: New York Times bestseller, London (england), fiction
+    - The Turn of the Screw by Henry James: New York Times reviewed, London (England), fiction
+    - Brave New World by Aldous Huxley: New York Times reviewed, London
+    - Bridget Jones's Diary by Helen Fielding and Helen Fielding: New York Times reviewed, London (england), fiction
+    - White teeth: a novel by Zadie Smith: New York Times reviewed, London (england), fiction
+  - Program:
+    - Selected poems of Lord Byron by Lord Byron,Leslie A. Marchand: Place subjects: England,New York (State),London,New York
+    - NIne Stories by J. D. Salinger: Place subjects: United States,Connecticut,London,New York (N.Y.)
+    - Nouvelles by J. D. Salinger: Place subjects: United States,Connecticut,London,New York (N.Y.)
+    - For Esme With Love and Squalor by J. D. Salinger: Place subjects: United States,Connecticut,London,New York (N.Y.)
+    - Nine Stories by J. D. Salinger: Place subjects: United States,Connecticut,London,New York (N.Y.)
+- Publisher: free OR libre
+  - Website:
+    - Le Couteau sur la nuque by Agatha Christie: Libr. des Champs-Elysées
+    - Daisy Miller by Henry James: Éditions Champ libre
+    - Memorias del subsuelo by Фёдор Михайлович Достоевский: Letra Libre
+    - La vallée de la peur by Arthur Conan Doyle: Ebooks Libres et Gratuits
+    - Medea by Euripides: Free Press
+  - Program:
+    - Émile Durkheim on The division of labor in society — Émile Durkheim,Steven Lukes,George Simpson: Free Press
+    - With friends like you — Matti Golan (1992): Free Press
+    - The antitrust paradox — Robert H. Bork: Free Press
+    - Ludwig Wittgenstein — Ray Monk: Free Press
+    - Agatha Christie — Gillian Gill: Free Press
+
+We can see from the results that in some cases in our results produced better matches than on the original website, this can be possible due to the fact that there are lot more books in different languages on the original page.

@@ -371,15 +371,11 @@ def main():
     .config("spark.memory.storageFraction", "0.3") \
     .config("spark.sql.files.maxPartitionBytes", "128MB") \
     .getOrCreate()
-    spark.sparkContext.setLogLevel("WARN")
-    print(spark.version)
-    # spark.stop()
+    spark.sparkContext.setLogLevel("ERROR")
     books_df = spark.read.option("header", True).option("sep", "\t").csv(DATA_FILE)
 
-    # books = books_df.collect()
 
     processed_books_df = process_books(books_df, spark)
-    processed_books_df.show(2)
     for row in processed_books_df.collect():
         book_dict = row.asDict()
 
@@ -390,15 +386,6 @@ def main():
         engine.add_book(book_dict)
         lucene_engine.add_book(book_dict)
 
-
-    # publishers = (
-    #     books_df.select("publisher")
-    #     .where("publisher IS NOT NULL AND publisher != 'N/A'")
-    #     .distinct()
-    #     .rdd.map(lambda r: r.publisher.strip())
-    #     .filter(lambda x: len(x) > 0)
-    #     .collect()
-    # )
     engine.build_tfidf()
     lucene_engine.commit();
 
